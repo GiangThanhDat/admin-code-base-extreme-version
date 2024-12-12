@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="dx-viewport"> {children}</body>
+      <body className="dx-viewport p-3">{children}</body>
     </html>
   );
 }

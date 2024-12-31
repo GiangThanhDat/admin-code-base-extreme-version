@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "devextreme/dist/css/dx.light.css";
+import { Sidebar } from "@/app/components/sidebar";
 
 export const metadata: Metadata = {
   title: "ADMIN CODEBASE EXTREME VERSION",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="dx-viewport p-3">{children}</body>
+      {/* Build side nav here */}
+      <body className="dx-viewport p-3">
+        <Sidebar title="MKS Dashboard">{children}</Sidebar>
+      </body>
     </html>
   );
 }

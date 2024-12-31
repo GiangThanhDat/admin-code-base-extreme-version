@@ -1,6 +1,5 @@
 import { Button } from "devextreme-react";
 import DataGrid, {
-  Column,
   ColumnChooser,
   ColumnChooserSearch,
   ColumnChooserSelection,
@@ -9,7 +8,6 @@ import DataGrid, {
   Editing,
   FilterPanel,
   FilterRow,
-  Button as GridButton,
   Grouping,
   HeaderFilter,
   Item,
@@ -84,11 +82,11 @@ export function DefaultDataGrid({
       <SearchPanel visible />
       <FilterPanel visible />
       <Editing mode="popup" allowUpdating allowDeleting allowAdding useIcons />
-      <Column type="buttons" width={"auto"}>
-        <GridButton name="edit" />
-        <GridButton name="delete" />
-        <GridButton hint="clone" icon="copy" />
-      </Column>
+      {/* <Column type="buttons" width={"auto"}> */}
+      {/*   <GridButton name="edit" /> */}
+      {/*   <GridButton name="delete" /> */}
+      {/*   <GridButton hint="clone" icon="copy" /> */}
+      {/* </Column> */}
       <Summary>
         {/* <GroupItem summaryType="count" /> */}
         <TotalItem column="priceBuy" summaryType="sum" valueFormat="currency" />

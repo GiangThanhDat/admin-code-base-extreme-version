@@ -16,7 +16,7 @@ type Unit = {
 
 type Warehouse = Unit;
 
-const productStore = createPaginationFiltersStore("/product/get-all");
+const productStore = createPaginationFiltersStore("/product");
 const unitStore = createQueryComponent("/unit/get-component");
 const warehouseStore = createQueryComponent("/warehouse/get-component");
 

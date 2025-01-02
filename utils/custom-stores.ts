@@ -1,28 +1,30 @@
 import { FilterDescriptor } from "devextreme/data";
-import CustomStore from "devextreme/data/custom_store";
+import CustomStore, {
+  Options as CustomStoreOptions,
+} from "devextreme/data/custom_store";
 
-type PaginationResponse<T> = {
-  code: number;
-  data: {
-    items: T[];
-    total: number;
-    summary: number;
-  };
-};
+// type PaginationResponse<T> = {
+//   code: number;
+//   data: {
+//     items: T[];
+//     total: number;
+//     summary: number;
+//   };
+// };
 
-type FetchResponse<T> = {
-  ok: boolean;
-  statusText: string;
-  json: () => PaginationResponse<T>;
-};
+// type NetWorkResponse<T> = {
+//   ok: boolean;
+//   statusText: string;
+//   json: () => T;
+// };
 
-function handleErrors<T>(response: FetchResponse<T>) {
-  if (!response.ok) {
-    throw Error(response.statusText);
-  }
-  return response;
-}
-
+// function handleErrors<T>(response: NetWorkResponse<T>) {
+//   if (!response.ok) {
+//     throw Error(response.statusText);
+//   }
+//   return response;
+// }
+//
 export const capitalizeFirstLetter = (string: string) => {
   return (string && string[0].toUpperCase() + string.slice(1)) || "";
 };
@@ -88,9 +90,25 @@ const createFilterColumn = (filter: FilterDescriptor | FilterDescriptor[]) => {
 const token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmltYXJ5c2lkIjoiNTkiLCJ1bmlxdWVfbmFtZSI6ImFkbWluIiwiZ3JvdXBzaWQiOiIxMiIsIkludm9pY2VDb25maWdJZCI6IjAiLCJCcmFuY2hJZHMiOiIiLCJTdGFmZklkIjoiMzMiLCJXYXJlaG91c2VJZHMiOiIiLCJVc2VyQ2FzaGllcklkcyI6IjIwMCw1OSIsIlBheW1lbnRUeXBlSWQiOiIyIiwibmJmIjoxNzMzNzM3MzUxLCJleHAiOjE3MzYzMjkzNTEsImlhdCI6MTczMzczNzM1MX0.Zo-Hu5CRQjEMzb-5S-0R7LPgzjZFFlzeCHl3DmqsBLI";
 
+export const request = async (url: string, options?: RequestInit) => {
+  return fetch(`https://api-restaurant-dev.phanmemviet.net.vn${url}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    ...options,
+  })
+    .then((response) => response.json())
+    .catch(() => {
+      throw "Network error";
+    });
+};
+
 export const createPaginationFiltersStore = <T extends { id: string | number }>(
   url: string,
   key?: keyof T,
+  options?: CustomStoreOptions,
 ) => {
   return new CustomStore({
     key: (key as string) || "id",
@@ -99,78 +117,71 @@ export const createPaginationFiltersStore = <T extends { id: string | number }>(
       const filterColumn = createFilterColumn(filter) || [
         { column: "string", keySearch: "string", expression: "string" },
       ];
-
-      return fetch(`https://api-restaurant-dev.phanmemviet.net.vn${url}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({
-          filterColumn,
-          pageIndex: skip / take + 1,
-          pageSize: take,
-          sortColumn: "Id",
-          sortOrder: 0,
-          isPage: false,
-        }),
-      })
-        .then((response) =>
-          handleErrors(response as unknown as FetchResponse<T>),
-        )
-        .then((response) => response.json())
-        .then((response) => {
-          return {
-            data: response.data.items,
-            totalCount: response.data.total,
-            summary: response.data.summary,
-          };
+      return (
+        request(`${url}/get-all`, {
+          method: "POST",
+          body: JSON.stringify({
+            filterColumn,
+            pageIndex: skip / take + 1,
+            pageSize: take,
+            sortColumn: "Id",
+            sortOrder: 0,
+            isPage: false,
+          }),
         })
-        .catch(() => {
-          throw "Network error";
-        });
+          // .then((response: NetWorkResponse<PaginationResponse<T>>) =>
+          //   handleErrors(response),
+          // )
+          .then((response) => {
+            return {
+              data: response.data.items,
+              totalCount: response.data.total,
+              summary: response.data.summary,
+            };
+          })
+      );
     },
+    byKey: (key) => request(`${url}/${key}`),
+    ...options,
   });
 };
 
-export const createQueryComponent = <T>(url: string) => {
-  return new CustomStore({
+export const createQueryComponent = (url: string) => {
+  const store = new CustomStore({
+    key: "id",
     load: async (loadOptions) => {
-      const { skip = 0, take = 1, searchValue } = loadOptions;
+      const { skip = 0, take = 10, searchValue } = loadOptions;
 
       const params = new URLSearchParams({
         id: "0",
         keySearch: searchValue || "",
-        pageIndex: `${skip / take + 1}`,
-        pageSiez: `${take}`,
+        pageIndex: `${Math.floor(skip / take) + 1}`,
+        pageSize: `${take}`,
         isGetAll: "true",
       }).toString();
 
-      return fetch(
-        `https://api-restaurant-dev.phanmemviet.net.vn${url}?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        },
-      )
-        .then((response) =>
-          handleErrors(response as unknown as FetchResponse<T>),
-        )
-        .then((response) => response.json())
-        .then((response) => {
-          return {
-            data: response.data.items,
-            totalCount: response.data.total,
-            summary: response.data.summary,
-          };
-        })
-        .catch(() => {
-          throw Error("Network error");
-        });
+      // fetch(`https://api-restaurant-dev.phanmemviet.net.vn${url}?${params}`, {
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //     Accept: "application/json",
+      //     "Content-Type": "application/json",
+      //   },
+      // })
+      //   // .then((response) =>
+      //   //   handleErrors(response as unknown as FetchResponse<T>),
+      //   // )
+      return request(`${url}/get-component?${params}`).then((response) => {
+        return {
+          data: response.data.items,
+          totalCount: response.data.total,
+          summary: response.data.summary,
+        };
+      });
+    },
+    byKey(key) {
+      return request(`${url}/${key}`, { method: "GET" });
     },
   });
+
+  return store;
 };

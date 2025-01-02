@@ -11,19 +11,18 @@ import {
 import Form, { GroupItem, Item, Label } from "devextreme-react/form";
 import Popup, { ToolbarItem } from "devextreme-react/popup";
 import { ColumnButtonClickEvent } from "devextreme/ui/data_grid";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DefaultDataGrid } from "../components/lib/default-data-grid";
 import { Tooltip } from "devextreme-react/tooltip";
 import validationEngine from "devextreme/ui/validation_engine";
 
 const orderCustomerStore = createPaginationFiltersStore(
-  "/order-customer/get-all",
+  "/order-customer",
   "id",
 );
 
 const LabelTemplate = (iconName: string) => {
   const Label = (data: { text: string }) => {
-    console.log("data:", data);
     return (
       <div>
         <i className={`dx-icon dx-icon-${iconName}`} />
@@ -90,6 +89,8 @@ export default function OrderCustomerPage() {
       visible: false,
     });
 
+  console.log("formData:", formData);
+
   const showPopup = useCallback(
     (isNewRecord: boolean, formData: PopupState["formData"]) => {
       setPopupState({ isNewRecord, formData, visible: true });
@@ -107,6 +108,8 @@ export default function OrderCustomerPage() {
       return;
     }
 
+    console.log("formData:", formData);
+
     if (isNewRecord) {
       console.log("insert new record");
     } else {
@@ -115,7 +118,7 @@ export default function OrderCustomerPage() {
 
     gridRef?.current?.instance()?._refresh();
     hidePopup();
-  }, [hidePopup, isNewRecord]);
+  }, [hidePopup, isNewRecord, formData]);
 
   const confirmBtnOptions = useMemo(() => {
     return { text: "Confirm", type: "success", onClick: confirmChanges };
@@ -136,14 +139,18 @@ export default function OrderCustomerPage() {
     showPopup(true, {});
   }, [showPopup]);
 
+  useEffect(() => {
+    console.log("formData:", formData);
+  }, [formData]);
+
   return (
     <DefaultDataGrid
       dataSource={orderCustomerStore}
       keyExpr={"id"}
       ref={gridRef}
     >
-      <Column dataField="code" caption="Ma Phieu" />
-      <Column dataField="name" caption="Ten" />
+      <Column dataField="code" caption="Mã phiếu" />
+      <Column dataField="name" caption="Tên" />
       <Column type="buttons">
         <Button name="edit" onClick={editRow} />
         <Button name="delete" />
@@ -205,11 +212,7 @@ export default function OrderCustomerPage() {
               >
                 <Label render={LabelTemplate("event")} />
               </Item>
-              <Item
-                dataField="HireDate"
-                editorOptions={{ label: "Ngay thue" }}
-                editorType="dxDateBox"
-              >
+              <Item dataField="HireDate" editorType="dxDateBox">
                 <Label render={LabelTemplate("event")} />
               </Item>
               <Item

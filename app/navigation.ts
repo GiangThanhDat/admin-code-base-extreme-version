@@ -9,4 +9,9 @@ export const navigation = [
     icon: "cart",
     path: "/order-customer",
   },
+  {
+    text: "stock-in",
+    icon: "cart",
+    path: "stock-in",
+  },
 ];

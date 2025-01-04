@@ -5,6 +5,11 @@ export const navigation = [
     path: "/products",
   },
   {
+    text: "products-client",
+    icon: "product",
+    path: "/products-client",
+  },
+  {
     text: "order-customer",
     icon: "cart",
     path: "/order-customer",

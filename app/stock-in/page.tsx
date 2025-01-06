@@ -128,7 +128,7 @@ export default function OrderCustomerPage() {
 
   const addRow = useCallback(() => {
     showPopup(true, {
-      stockInDetails: [{ id: Math.random() }],
+      purchaseDetails: [{ id: Math.random() }],
     });
   }, [showPopup]);
 
@@ -218,7 +218,7 @@ export default function OrderCustomerPage() {
             </GroupItem>
             <GroupItem>
               <DataGrid
-                dataSource={formData.stockInDetails}
+                dataSource={formData?.purchaseDetails ?? []}
                 onEditorPreparing={onEditorPreparing}
               >
                 <Editing

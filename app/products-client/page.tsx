@@ -1,6 +1,6 @@
 "use client";
 
-import { createQueryComponent, request } from "@/utils/custom-stores";
+import { request } from "@/utils/custom-stores";
 import { Button } from "devextreme-react";
 import { ColumnChooserSearch } from "devextreme-react/cjs/tree-list";
 import DataGrid, {
@@ -29,18 +29,6 @@ import DataGrid, {
   TotalItem,
 } from "devextreme-react/data-grid";
 import { RefObject, useRef, useState } from "react";
-
-type Unit = {
-  id: number;
-  code: string;
-  name: string;
-};
-
-type Warehouse = Unit;
-
-// const productStore = createPaginationFiltersStore("/product");
-const unitStore = createQueryComponent("/unit/get-component");
-const warehouseStore = createQueryComponent("/warehouse/get-component");
 
 const {
   data: { items: products },
@@ -102,11 +90,6 @@ export default function ProductsPage() {
       <FilterPanel visible />
       <GroupPanel visible />
       <Editing mode="popup" allowUpdating allowDeleting allowAdding useIcons />
-      {/* <Column type="buttons" width={"auto"}> */}
-      {/*   <GridButton name="edit" /> */}
-      {/*   <GridButton name="delete" /> */}
-      {/*   <GridButton hint="clone" icon="copy" /> */}
-      {/* </Column> */}
       <Summary>
         {/* <GroupItem summaryType="count" /> */}
         <TotalItem column="priceBuy" summaryType="sum" valueFormat="currency" />
@@ -196,26 +179,18 @@ export default function ProductsPage() {
         dataType="string"
         // cellRender={(props) => <>{props.data.unitName}</>}
         caption="Don vi"
-      >
-        {/* <HeaderFilter dataSource={unitHeaderFilterSource} /> */}
-      </Column>
+      />
       <Column
         dataField="unit1Id"
         caption="Đơn vị tính 1"
         cellRender={(props) => <>{props.data.unit1Name}</>}
-      >
-        {/* <HeaderFilter dataSource={unitHeaderFilterSource} /> */}
-      </Column>
+      />
       <Column
         dataField="unit2Id"
         cellRender={(props) => <>{props.data.unit2Name}</>}
         caption="Đơn vị tính 2"
-      >
-        {/* <HeaderFilter dataSource={unitHeaderFilterSource} /> */}
-      </Column>
-      <Column dataField="warehouseId" caption="Kho hàng">
-        {/* <HeaderFilter dataSource={warehouseHeaderFilterSource} /> */}
-      </Column>
+      />
+      <Column dataField="warehouseId" caption="Kho hàng" />
       <Column dataField="weight" dataType="number" caption="Khối lượng" />
       <Column dataField="weight1" dataType="number" caption="Khối lượng 1" />
       <Column dataField="weight2" dataType="number" caption="Khối lượng 2" />

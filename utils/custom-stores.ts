@@ -150,7 +150,7 @@ export const createQueryComponent = (url: string) => {
   const store = new CustomStore({
     key: "id",
     load: async (loadOptions) => {
-      const { skip = 0, take = 10, searchValue } = loadOptions;
+      const { skip = 0, take = 1000000, searchValue } = loadOptions;
 
       const params = new URLSearchParams({
         id: "0",

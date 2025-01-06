@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  createPaginationFiltersStore,
-  createQueryComponent,
-  request,
-} from "@/utils/custom-stores";
+import { createQueryComponent, request } from "@/utils/custom-stores";
 import DefaultButton from "devextreme-react/button";
 import { ColumnChooserSearch } from "devextreme-react/cjs/tree-list";
 import DataGrid, {
-  Column,
   Button,
+  Column,
   ColumnChooser,
   ColumnChooserSelection,
   ColumnFixing,
@@ -35,14 +31,13 @@ import DataGrid, {
   Toolbar,
   TotalItem,
 } from "devextreme-react/data-grid";
+import Form, { Item as FormItem, GroupItem } from "devextreme-react/form";
+import Popup, { ToolbarItem } from "devextreme-react/popup";
 import { ColumnButtonClickEvent } from "devextreme/ui/data_grid";
 import { RefObject, useCallback, useMemo, useRef, useState } from "react";
-import Popup, { ToolbarItem } from "devextreme-react/popup";
-import Form, { GroupItem, Item as FormItem } from "devextreme-react/form";
 
 import validationEngine from "devextreme/ui/validation_engine";
 
-// const stockInStore = createPaginationFiltersStore("/stock-in", "id");
 const productComponentStore = createQueryComponent("/product");
 const unitComponentStore = createQueryComponent("/unit");
 const warehouseComponentStore = createQueryComponent("/warehouse");
@@ -79,6 +74,8 @@ const getProductInfoByUnitLabel = (
   } & Record<string, unknown>,
   unitLabel: string = "UNIT",
 ) => {
+  if (!product) return;
+
   const unitNumber = getNumbersFromString(unitLabel);
   return {
     productId: product.id,
@@ -162,7 +159,7 @@ export default function PurchasePage() {
 
     // gridRef?.current?.instance()?._refresh();
     // hidePopup();
-  }, [hidePopup, isNewRecord, formData]);
+  }, [isNewRecord]);
 
   const confirmBtnOptions = useMemo(() => {
     return { text: "Confirm", type: "success", onClick: confirmChanges };
@@ -189,32 +186,32 @@ export default function PurchasePage() {
 
   const onEditorPreparing = (e: DataGridTypes.EditorPreparingEvent) => {
     if (e.dataField === "productId") {
-      productComponentStore.byKey(e.value).then((response) => {
-        // console.log("response:", response);
-        const product = response.data;
-        const infoByUnit = getProductInfoByUnitLabel(product);
-        if (e?.row?.data) {
-          // console.log("infoByUnit:", infoByUnit);
-          e.row.data.unitId = infoByUnit.id;
-          e.row.data.priceBuy = infoByUnit.priceBuy;
-          e.row.data.unitChange = infoByUnit.unitChange;
-        }
-      });
+      const productId = e.value;
+      if (productId) {
+        productComponentStore.byKey(e.value).then((response) => {
+          const product = response.data;
+          const infoByUnit = getProductInfoByUnitLabel(product);
+          if (e?.row?.data && infoByUnit) {
+            e.row.data.unitId = infoByUnit.id;
+            e.row.data.priceBuy = infoByUnit.priceBuy;
+            e.row.data.unitChange = infoByUnit.unitChange;
+          }
+        });
+      }
     }
 
-    if (e.dataField === "quantity" || e.dataField === "priceBuy") {
+    if (e.dataField === "quantity" || e.dataField === "price") {
       const newValue = e.value;
       // Calculate totalAmount dynamically
       if (e.row && e.row.data) {
         const rowData = e.row.data;
 
         // Update totalAmount based on the new value
-        const priceBuy =
-          e.dataField === "priceBuy" ? newValue : rowData.priceBuy || 0;
+        const price = e.dataField === "price" ? newValue : rowData.price || 0;
         const quantity =
-          e.dataField === "quantity" ? newValue : rowData.quantity || 0;
+          e.dataField === "price" ? newValue : rowData.quantity || 0;
 
-        rowData.totalAmount = priceBuy * quantity;
+        rowData.totalAmount = price * quantity;
 
         // Refresh the grid for immediate effect (optional but recommended)
         // e.component.refresh();
@@ -357,12 +354,20 @@ export default function PurchasePage() {
               <FormItem dataField="userCreateId" />
               <FormItem dataField="code" />
               <FormItem dataField="deliverer" />
-              <FormItem dataField="stockInTime" />
+              <FormItem dataField="purchaseTime" />
               <FormItem dataField="note" />
               <FormItem dataField="receiptsAndExpensesContentId" />
             </GroupItem>
             <GroupItem>
               <DataGrid
+                keyExpr={"id"}
+                id="purchase-editable-data-grid"
+                columnAutoWidth
+                allowColumnResizing
+                allowColumnReordering
+                showBorders
+                showRowLines
+                rowAlternationEnabled
                 dataSource={formData?.purchaseDetails ?? []}
                 onEditorPreparing={onEditorPreparing}
               >
@@ -389,16 +394,108 @@ export default function PurchasePage() {
                     displayExpr={(item) => `${item.code} ${item.name}`}
                   />
                 </Column>
-                <Column dataField="quantity" caption="SL" />
                 <Column dataField="unitChange" caption="Quy đổi" />
-                <Column dataField="priceBuy" caption="Đơn giá" />
-                <Column dataField="totalAmount" caption="Thành tiền" />
+                <Column
+                  dataField="quantityPromotion"
+                  caption="SL KM"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="quantity"
+                  caption="SL"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="price"
+                  caption="Đơn giá"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="specifications"
+                  caption="Quy cach"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="percentDiscount"
+                  caption="% KM"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="cashDiscount"
+                  caption="KM"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="percentVat"
+                  caption="% Vat"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="cashVat"
+                  caption="Phi Vat"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="totalAmount"
+                  caption="Thành tiền"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
                 <Column dataField="warehouseId" caption="Kho">
                   <Lookup
                     dataSource={warehouseComponentStore}
                     valueExpr={"id"}
                     displayExpr={(item) => `${item.code} ${item.name}`}
                   />
+                </Column>
+
+                <Column
+                  dataField="weight"
+                  caption="Trong luong"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="totalWeightProduct"
+                  caption="Tong trong luong"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="quantityRate"
+                  caption="Ti le hao hut"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column
+                  dataField="quantityStockIn"
+                  caption="So luong nhap kho"
+                  dataType="number"
+                  alignment="right"
+                  format=",##0.##"
+                />
+                <Column type="buttons" fixed fixedPosition="right">
+                  <Button name="delete" />
                 </Column>
               </DataGrid>
             </GroupItem>

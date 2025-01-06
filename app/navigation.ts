@@ -10,6 +10,11 @@ export const navigation = [
     path: "/products-client",
   },
   {
+    text: "Mua hang",
+    icon: "product",
+    path: "/purchase",
+  },
+  {
     text: "order-customer",
     icon: "cart",
     path: "/order-customer",

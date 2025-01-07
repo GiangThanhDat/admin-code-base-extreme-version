@@ -31,7 +31,11 @@ import DataGrid, {
   Toolbar,
   TotalItem,
 } from "devextreme-react/data-grid";
-import Form, { Item as FormItem, GroupItem } from "devextreme-react/form";
+import Form, {
+  Item as FormItem,
+  GroupItem,
+  Label,
+} from "devextreme-react/form";
 import Popup, { ToolbarItem } from "devextreme-react/popup";
 import { ColumnButtonClickEvent } from "devextreme/ui/data_grid";
 import { RefObject, useCallback, useMemo, useRef, useState } from "react";
@@ -41,6 +45,8 @@ import validationEngine from "devextreme/ui/validation_engine";
 const productComponentStore = createQueryComponent("/product");
 const unitComponentStore = createQueryComponent("/unit");
 const warehouseComponentStore = createQueryComponent("/warehouse");
+const supplierComponentStore = createQueryComponent("/supplier");
+const userComponentStore = createQueryComponent("/user");
 
 type PopupState = {
   isNewRecord?: boolean;
@@ -102,6 +108,18 @@ const {
     isPage: false,
   }),
 });
+
+const LabelTemplate = (iconName: string) => {
+  const Label = (data: { text: string }) => {
+    return (
+      <div>
+        <i className={`dx-icon dx-icon-${iconName}`} />
+        {data.text}
+      </div>
+    );
+  };
+  return Label;
+};
 
 const getById = (url: string, id: number) => {
   return request(`${url}/${id}`, { method: "GET" });
@@ -349,14 +367,99 @@ export default function PurchasePage() {
             toolbar="bottom"
             options={cancelBtnOptions}
           />
-          <Form validationGroup={validationGroupName} formData={formData}>
-            <GroupItem colCount={2}>
-              <FormItem dataField="userCreateId" />
-              <FormItem dataField="code" />
-              <FormItem dataField="deliverer" />
-              <FormItem dataField="purchaseTime" />
-              <FormItem dataField="note" />
-              <FormItem dataField="receiptsAndExpensesContentId" />
+          <Form
+            validationGroup={validationGroupName}
+            onFieldDataChanged={(e) => {
+              //e.dataField,. e.value
+              console.log("e:", e);
+            }}
+            formData={formData}
+          >
+            <GroupItem colCount={3}>
+              <FormItem
+                colSpan={2}
+                dataField="supplierId"
+                editorType="dxSelectBox"
+                label={{
+                  text: "Nha cung cap",
+                }}
+                editorOptions={{
+                  dataSource: supplierComponentStore,
+                  valueExpr: "id",
+                  displayExpr: (item: { code: string; name: string }) => {
+                    if (!item) return "";
+                    let str = "";
+                    if (item.code) str += item.code;
+                    if (item.name) str += ` - ${item.name}`;
+
+                    return str;
+                  },
+                  searchEnable: true,
+                }}
+              />
+              <FormItem
+                dataField="purchaseTime"
+                label={{ text: "Ngay lap" }}
+                editorType="dxDateBox"
+              />
+              <FormItem
+                colSpan={2}
+                label={{ text: "Nguoi giao" }}
+                dataField="deliverer"
+                editorType="dxSelectBox"
+                editorOptions={{
+                  dataSource: userComponentStore,
+                  valueExpr: "id",
+                  displayExpr: (item: { userName: string; name: string }) => {
+                    if (!item) return "";
+                    let str = "";
+                    if (item.userName) str += item.userName;
+                    if (item.name) str += ` - ${item.name}`;
+
+                    return str;
+                  },
+                }}
+              />
+              <FormItem dataField="code" label={{ text: "Ma phieu" }} />
+              <FormItem
+                colSpan={2}
+                label={{ text: "Ghi chu" }}
+                dataField="note"
+                editorType="dxTextArea"
+                editorOptions={{
+                  height: 90,
+                  maxLength: 200,
+                }}
+              />
+              <FormItem dataField="numberOfCode" label={{ text: "So phieu" }} />
+              {/* <FormItem colSpan={2} /> */}
+              <FormItem
+                colSpan={2}
+                label={{ text: "Kiem nhap kho" }}
+                dataField="isStockIn"
+                editorType="dxCheckBox"
+                editorOptions={{
+                  // text: "Kiem nhap kho",
+                  // hint: "Kiem nhap kho",
+                  iconSize: "25",
+                }}
+              />
+              <FormItem
+                dataField="userCreate"
+                editorType="dxSelectBox"
+                label={{ text: "Nguoi lap" }}
+                editorOptions={{
+                  dataSource: userComponentStore,
+                  valueExpr: "id",
+                  displayExpr: (item: { userName: string; name: string }) => {
+                    if (!item) return "";
+                    let str = "";
+                    if (item.userName) str += item.userName;
+                    if (item.name) str += ` - ${item.name}`;
+                    return str;
+                  },
+                }}
+              />
             </GroupItem>
             <GroupItem>
               <DataGrid
@@ -498,6 +601,28 @@ export default function PurchasePage() {
                   <Button name="delete" />
                 </Column>
               </DataGrid>
+            </GroupItem>
+            <GroupItem colCount={4}>
+              <FormItem
+                dataField="totalAmountProduct"
+                label={{ text: "Tong thanh tien" }}
+                editorType="dxNumberBox"
+              />
+              <FormItem
+                dataField="percentDiscount"
+                label={{ text: "Tong thanh tien" }}
+                editorType="dxNumberBox"
+              />
+              <FormItem
+                dataField="cashDiscount"
+                label={{ text: "Tien CK" }}
+                editorType="dxNumberBox"
+              />
+              <FormItem
+                dataField="totalAmount"
+                label={{ text: "Tong cong" }}
+                editorType="dxNumberBox"
+              />
             </GroupItem>
           </Form>
         </Popup>

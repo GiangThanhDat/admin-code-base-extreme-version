@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import "devextreme/dist/css/dx.light.css";
+import "./globals.css";
 import { Sidebar } from "@/app/components/sidebar";
 
 export const metadata: Metadata = {

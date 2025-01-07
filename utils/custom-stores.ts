@@ -179,6 +179,9 @@ export const createQueryComponent = (url: string) => {
       });
     },
     byKey(key) {
+      if (!key) {
+        return Promise.reject();
+      }
       return request(`${url}/${key}`, { method: "GET" });
     },
   });

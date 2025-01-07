@@ -233,7 +233,7 @@ export default function OrderCustomerPage() {
               <Item dataField="Email" validationRules={validationRules.email}>
                 <Label render={LabelTemplate("email")} />
               </Item>
-            </GroupItem>{" "}
+            </GroupItem>
           </Form>
         </Popup>
       )}

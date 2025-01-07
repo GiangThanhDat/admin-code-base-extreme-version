@@ -265,7 +265,7 @@ export default function PurchasePage() {
       <Sorting mode="multiple" />
       <FilterRow visible showOperationChooser />
       <Scrolling mode="standard" rowRenderingMode="standard" />
-      <Paging enabled defaultPageSize={1000000} />
+      <Paging enabled defaultPageSize={10} />
       <Grouping
         autoExpandAll={expanded}
         contextMenuEnabled={true}
@@ -277,7 +277,7 @@ export default function PurchasePage() {
         showNavigationButtons
         showPageSizeSelector
         displayMode="adaptive"
-        allowedPageSizes={"auto"}
+        // allowedPageSizes={[5, 10, 50, 100, "all"]}
       />
       <StateStoring
         enabled

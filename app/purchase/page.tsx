@@ -34,8 +34,10 @@ import Form, { Item as FormItem, GroupItem } from "devextreme-react/form";
 import Popup, { ToolbarItem } from "devextreme-react/popup";
 import { ColumnButtonClickEvent } from "devextreme/ui/data_grid";
 import { RefObject, useCallback, useMemo, useRef, useState } from "react";
+
 import validationEngine from "devextreme/ui/validation_engine";
 import notify from "devextreme/ui/notify";
+
 const productComponentStore = createQueryComponent("/product");
 const unitComponentStore = createQueryComponent("/unit");
 const supplierComponentStore = createQueryComponent("/supplier");
@@ -54,7 +56,6 @@ const fetchComponent = async (url: string) => {
   }).toString();
 
   return request(`${url}/get-component?${params}`).then((response) => {
-    console.log("response:", response);
     return {
       data: response.data.items,
       totalCount: response.data.total,

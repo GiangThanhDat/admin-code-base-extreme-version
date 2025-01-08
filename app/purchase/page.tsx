@@ -221,24 +221,28 @@ const getNumbersFromString = (numberString: string) => {
   return numberString.replace(/[^0-9]/g, "");
 };
 
+type Product = {
+  id: number;
+  priceBuy: number;
+  priceBuy1: number;
+  priceBuy2: number;
+  priceSale: number;
+  priceSale1: number;
+  priceSale2: number;
+  unitId: number;
+  unit1Id: number;
+  unit2Id: number;
+  unitName: number;
+  unit1Name: number;
+  unit2Name: number;
+  weight: number;
+  weight1: number;
+  weight2: number;
+  unitDefault: string;
+} & Record<string, unknown>;
+
 const getProductInfoByUnitLabel = (
-  product: {
-    priceBuy: number;
-    priceBuy1: number;
-    priceBuy2: number;
-    priceSale: number;
-    priceSale1: number;
-    priceSale2: number;
-    unitId: number;
-    unit1Id: number;
-    unit2Id: number;
-    unitName: number;
-    unit1Name: number;
-    unit2Name: number;
-    weight: number;
-    weight1: number;
-    weight2: number;
-  } & Record<string, unknown>,
+  product: Product,
   unitLabel: string = "UNIT",
 ) => {
   if (!product) return;
@@ -280,13 +284,51 @@ const displayExpr =
 
 const warehouseHash = hash<WarehouseWithCurrentQuantity>(warehouseList);
 
+const getUnitsByMaterials = (product: Product) => {
+  if (!product) {
+    return [];
+  }
+
+  const units = Object.keys(product).reduce(
+    (result, key) => {
+      if (!key.includes("unit")) {
+        return result;
+      }
+
+      const unitNumber = getNumbersFromString(key);
+      const unitId = product[`unit${unitNumber}Id`] as number;
+
+      if (!unitId || !unitNumber) {
+        return result;
+      }
+
+      return {
+        ...result,
+        [unitNumber]: getProductInfoByUnitLabel(product, `UNIT${unitNumber}`),
+      };
+    },
+    {
+      unitDefault: {
+        ...getProductInfoByUnitLabel(
+          product,
+          product.unitDefault?.toLocaleUpperCase(),
+        ),
+        isDefault: true,
+      },
+    },
+  );
+
+  return Object.values(units);
+};
+
 export default function PurchasePage() {
   const ref = useRef<DataGridRef>(null);
   const editableDataGridRef = useRef<DataGridRef>(null);
   const [expanded, setExpanded] = useState(true);
   const currentStockByProductRef = useRef<
-    Record<number, Purchase["purchaseDetails"]>
+    Record<number, WarehouseWithCurrentQuantity>
   >({});
+  const unitByProduct = useRef<Record<number, Product>>({});
 
   const [{ isNewRecord, formData, visible }, setPopupState] =
     useState<PopupState>({
@@ -312,7 +354,6 @@ export default function PurchasePage() {
       return;
     }
 
-    // console.log("formData:", formData);
     if (!formData) return;
 
     if (isNewRecord) {
@@ -354,6 +395,15 @@ export default function PurchasePage() {
         e.editorOptions.valueExpr = "id";
       }
     }
+
+    if (e.dataField === "unitId") {
+      const productId = e.row?.data?.productId;
+      if (productId) {
+        e.editorOptions.value = e.value;
+        e.editorOptions.dataSource = unitByProduct.current[productId];
+        e.editorOptions.valueExpr = "id";
+      }
+    }
   };
 
   const onEditorPrepared = (e: DataGridTypes.EditorPreparedEvent) => {
@@ -383,6 +433,10 @@ export default function PurchasePage() {
       .catch((error) => console.error("error:", error));
   };
 
+  const setUnitsByProduct = (product: Product) => {
+    unitByProduct.current[product.id] = getUnitsByMaterials(product);
+  };
+
   const onCellPrepared = (e: DataGridTypes.CellPreparedEvent) => {
     if (e.rowType === "data" && e.column.dataField === "productId") {
       const productId = e.value;
@@ -395,6 +449,10 @@ export default function PurchasePage() {
             e.data.unitId = infoByUnit.id;
             e.data.priceBuy = infoByUnit.priceBuy;
             e.data.unitChange = infoByUnit.unitChange;
+          }
+
+          if (unitByProduct.current[productId] === undefined) {
+            setUnitsByProduct(product);
           }
         });
         // get current stock by product

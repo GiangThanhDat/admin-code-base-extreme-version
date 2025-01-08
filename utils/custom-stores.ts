@@ -24,7 +24,7 @@ import CustomStore, {
 //   }
 //   return response;
 // }
-//
+
 export const capitalizeFirstLetter = (string: string) => {
   return (string && string[0].toUpperCase() + string.slice(1)) || "";
 };
@@ -88,9 +88,14 @@ const createFilterColumn = (filter: FilterDescriptor | FilterDescriptor[]) => {
 };
 
 const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmltYXJ5c2lkIjoiNTkiLCJ1bmlxdWVfbmFtZSI6ImFkbWluIiwiZ3JvdXBzaWQiOiIxMiIsIkludm9pY2VDb25maWdJZCI6IjAiLCJCcmFuY2hJZHMiOiIiLCJTdGFmZklkIjoiMzMiLCJXYXJlaG91c2VJZHMiOiIiLCJVc2VyQ2FzaGllcklkcyI6IjIwMCw1OSIsIlBheW1lbnRUeXBlSWQiOiIyIiwibmJmIjoxNzMzNzM3MzUxLCJleHAiOjE3MzYzMjkzNTEsImlhdCI6MTczMzczNzM1MX0.Zo-Hu5CRQjEMzb-5S-0R7LPgzjZFFlzeCHl3DmqsBLI";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmltYXJ5c2lkIjoiNTkiLCJ1bmlxdWVfbmFtZSI6ImFkbWluIiwiZ3JvdXBzaWQiOiIxMiIsIkludm9pY2VDb25maWdJZCI6IjAiLCJCcmFuY2hJZHMiOiIxMDIsNDkiLCJTdGFmZklkIjoiMzMiLCJXYXJlaG91c2VJZHMiOiI2Miw2Niw2Nyw2MCw2MSIsIlVzZXJDYXNoaWVySWRzIjoiMjAwLDU5IiwiUGF5bWVudFR5cGVJZCI6IjIiLCJuYmYiOjE3MzYzMjk5NDcsImV4cCI6MTczODkyMTk0NywiaWF0IjoxNzM2MzI5OTQ3fQ.gn727WZAJz819B0TnOnCqReKypGC_lPLbf0U9IwYM-U";
+
+// const petrolToken =
+//   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmltYXJ5c2lkIjoiNTkiLCJ1bmlxdWVfbmFtZSI6ImFkbWluIiwiZ3JvdXBzaWQiOiIxMiIsIkludm9pY2VDb25maWdJZCI6IjMiLCJCcmFuY2hJZHMiOiI0OSwxMDUsMTA3LDEwMiwxMTMsMTE1LDExNiIsIlN0YWZmSWQiOiIiLCJXYXJlaG91c2VJZHMiOiIxMCw2LDMsMiwxMywxNiwxLDE3LDE5LDIwLDIxLDE1LDIzLDI0LDIyLDI3IiwibmJmIjoxNzM2MzA2NTc0LCJleHAiOjE3Mzg4OTg1NzQsImlhdCI6MTczNjMwNjU3NH0.xOerHuuRuP0eMfHjnj57hI3R4XppWCSJoQKODjHcnMo";
 
 export const request = async (url: string, options?: RequestInit) => {
+  // api-petrol-dev.phanmemviet.net.vn
+  // api-restaurant-dev.phanmemviet.net.vn
   return fetch(`https://api-restaurant-dev.phanmemviet.net.vn${url}`, {
     headers: {
       Authorization: `Bearer ${token}`,

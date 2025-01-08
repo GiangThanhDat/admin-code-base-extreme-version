@@ -33,22 +33,98 @@ import DataGrid, {
 import Form, { Item as FormItem, GroupItem } from "devextreme-react/form";
 import Popup, { ToolbarItem } from "devextreme-react/popup";
 import { ColumnButtonClickEvent } from "devextreme/ui/data_grid";
-import {
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { RefObject, useCallback, useMemo, useRef, useState } from "react";
 import validationEngine from "devextreme/ui/validation_engine";
-
+import notify from "devextreme/ui/notify";
 const productComponentStore = createQueryComponent("/product");
 const unitComponentStore = createQueryComponent("/unit");
-const warehouseComponentStore = createQueryComponent("/warehouse");
 const supplierComponentStore = createQueryComponent("/supplier");
 const userComponentStore = createQueryComponent("/user");
 
+const fetchComponent = async (url: string) => {
+  const skip = 1,
+    take = 1000000;
+
+  const params = new URLSearchParams({
+    id: "0",
+    keySearch: "",
+    pageIndex: `${Math.floor(skip / take) + 1}`,
+    pageSize: `${take}`,
+    isGetAll: "true",
+  }).toString();
+
+  return request(`${url}/get-component?${params}`).then((response) => {
+    console.log("response:", response);
+    return {
+      data: response.data.items,
+      totalCount: response.data.total,
+      summary: response.data.summary,
+    };
+  });
+};
+
+const { data: warehouseList } = await fetchComponent("/warehouse");
+const {
+  data: { items: purchaseList },
+} = await request("/purchase/get-all", {
+  method: "POST",
+  body: JSON.stringify({
+    filterColumn: [],
+    pageIndex: 1,
+    pageSize: 1000000,
+    sortColumn: "Id",
+    sortOrder: 0,
+    isPage: false,
+  }),
+});
+
+const mutatePurchase = async (data: Purchase) => {
+  return request(`/purchase/${data.id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  }).then((response) => {
+    const type = !response.data ? "error" : "success";
+    notify(
+      {
+        message: response.message,
+        width: 500,
+        position: {
+          // at: "bottom",
+          // my: "bottom",
+          // of: "#container",
+        },
+      },
+      type,
+      200,
+    );
+  });
+};
+
+const getById = (url: string, id: number) => {
+  return request(`${url}/${id}`, { method: "GET" });
+};
+
+const supplierStore = createQueryComponent("/supplier");
+
+const lookupSupplier = {
+  store: supplierStore,
+  sort: "id",
+};
+
+const getCurrentStockByMaterials = async (productId: number) => {
+  return request(
+    `/common/product-current-stock-get-by-product?productId=${productId}`,
+    {
+      method: "GET",
+    },
+  );
+};
+
+type WarehouseWithCurrentQuantity = {
+  id: number;
+  warehouseId: number;
+  currentStockQuantity: number;
+};
 type Purchase = {
   id: number;
   cashDiscount: number;
@@ -66,81 +142,6 @@ type PopupState = {
   formData?: Purchase;
   visible?: boolean;
 };
-
-const validationGroupName = "stock-in-validation-group-name";
-
-const getNumbersFromString = (numberString: string) => {
-  return numberString.replace(/[^0-9]/g, "");
-};
-
-const getProductInfoByUnitLabel = (
-  product: {
-    priceBuy: number;
-    priceBuy1: number;
-    priceBuy2: number;
-    priceSale: number;
-    priceSale1: number;
-    priceSale2: number;
-    unitId: number;
-    unit1Id: number;
-    unit2Id: number;
-    unitName: number;
-    unit1Name: number;
-    unit2Name: number;
-    weight: number;
-    weight1: number;
-    weight2: number;
-  } & Record<string, unknown>,
-  unitLabel: string = "UNIT",
-) => {
-  if (!product) return;
-
-  const unitNumber = getNumbersFromString(unitLabel);
-  return {
-    productId: product.id,
-    typeProduct: product.productType,
-    id: product[`unit${unitNumber}Id`],
-    name: product[`unit${unitNumber}Name`],
-    unitChange: product[`unitChange${unitNumber}`],
-    priceBuy: product[`priceBuy${unitNumber}`],
-    priceSale: product[`priceSale${unitNumber}`],
-    weight: product[`weight${unitNumber}`],
-  };
-};
-
-const {
-  data: { items: purchaseList },
-} = await request("/purchase/get-all", {
-  method: "POST",
-  body: JSON.stringify({
-    filterColumn: [],
-    pageIndex: 1,
-    pageSize: 1000000,
-    sortColumn: "Id",
-    sortOrder: 0,
-    isPage: false,
-  }),
-});
-
-const getById = (url: string, id: number) => {
-  return request(`${url}/${id}`, { method: "GET" });
-};
-
-const supplierStore = createQueryComponent("/supplier");
-
-const lookupSupplier = {
-  store: supplierStore,
-  sort: "id",
-};
-
-const getInitialFilterRangeDate = () => {
-  const date = new Date();
-  return [new Date(date.getFullYear(), date.getMonth(), 1), date];
-};
-
-const initialFilterRangeDate = getInitialFilterRangeDate();
-
-const PERCENT_BASE: number = 100;
 
 const defaultPurchase = {
   id: 0, // Khóa chính
@@ -206,10 +207,85 @@ const defaultPurchase = {
   ],
 };
 
+const validationGroupName = "stock-in-validation-group-name";
+const getInitialFilterRangeDate = () => {
+  const date = new Date();
+  return [new Date(date.getFullYear(), date.getMonth(), 1), date];
+};
+const initialFilterRangeDate = getInitialFilterRangeDate();
+
+const PERCENT_BASE: number = 100;
+
+const getNumbersFromString = (numberString: string) => {
+  return numberString.replace(/[^0-9]/g, "");
+};
+
+const getProductInfoByUnitLabel = (
+  product: {
+    priceBuy: number;
+    priceBuy1: number;
+    priceBuy2: number;
+    priceSale: number;
+    priceSale1: number;
+    priceSale2: number;
+    unitId: number;
+    unit1Id: number;
+    unit2Id: number;
+    unitName: number;
+    unit1Name: number;
+    unit2Name: number;
+    weight: number;
+    weight1: number;
+    weight2: number;
+  } & Record<string, unknown>,
+  unitLabel: string = "UNIT",
+) => {
+  if (!product) return;
+
+  const unitNumber = getNumbersFromString(unitLabel);
+  return {
+    productId: product.id,
+    typeProduct: product.productType,
+    id: product[`unit${unitNumber}Id`],
+    name: product[`unit${unitNumber}Name`],
+    unitChange: product[`unitChange${unitNumber}`],
+    priceBuy: product[`priceBuy${unitNumber}`],
+    priceSale: product[`priceSale${unitNumber}`],
+    weight: product[`weight${unitNumber}`],
+  };
+};
+
+const hash = <T extends { id: number }>(
+  list: T[],
+  key: keyof T = "id",
+): Record<number | string, T> => {
+  if (!list || list.length === 0) return {} as Record<number | string, T>;
+  return list.reduce(
+    (acc: Record<keyof T, T>, curr) => {
+      return { ...acc, [curr[key] as number]: curr };
+    },
+    {} as Record<keyof T, T>,
+  );
+};
+
+const displayExpr =
+  <T,>(showFields: (keyof T)[]) =>
+  (item: T) => {
+    return showFields
+      .map((field) => item[field])
+      .filter((i) => i !== undefined || i !== null || i !== "")
+      .join(" - ");
+  };
+
+const warehouseHash = hash<WarehouseWithCurrentQuantity>(warehouseList);
+
 export default function PurchasePage() {
   const ref = useRef<DataGridRef>(null);
   const editableDataGridRef = useRef<DataGridRef>(null);
   const [expanded, setExpanded] = useState(true);
+  const currentStockByProductRef = useRef<
+    Record<number, Purchase["purchaseDetails"]>
+  >({});
 
   const [{ isNewRecord, formData, visible }, setPopupState] =
     useState<PopupState>({
@@ -236,16 +312,15 @@ export default function PurchasePage() {
     }
 
     // console.log("formData:", formData);
+    if (!formData) return;
 
     if (isNewRecord) {
       console.log("insert new record");
     } else {
       console.log("update existed record");
+      mutatePurchase(formData).then(() => hidePopup());
     }
-
-    // gridRef?.current?.instance()?._refresh();
-    // hidePopup();
-  }, [isNewRecord]);
+  }, [isNewRecord, hidePopup, formData]);
 
   const confirmBtnOptions = useMemo(() => {
     return { text: "Confirm", type: "success", onClick: confirmChanges };
@@ -269,43 +344,76 @@ export default function PurchasePage() {
   }, [showPopup]);
 
   const onEditorPreparing = (e: DataGridTypes.EditorPreparingEvent) => {
-    if (e.dataField === "productId") {
-      const productId = e.value;
+    if (e.dataField === "warehouseId") {
+      const productId = e.row?.data?.productId;
       if (productId) {
-        productComponentStore.byKey(e.value).then((response) => {
-          const product = response.data;
-          const infoByUnit = getProductInfoByUnitLabel(product);
-          if (e?.row?.data && infoByUnit) {
-            e.row.data.unitId = infoByUnit.id;
-            e.row.data.priceBuy = infoByUnit.priceBuy;
-            e.row.data.unitChange = infoByUnit.unitChange;
-          }
-        });
-      }
-    }
-
-    if (e.dataField === "quantity" || e.dataField === "price") {
-      const newValue = e.value;
-      // Calculate totalAmount dynamically
-      if (e.row && e.row.data) {
-        const rowData = e.row.data;
-
-        // Update totalAmount based on the new value
-        const price = e.dataField === "price" ? newValue : rowData.price || 0;
-        const quantity =
-          e.dataField === "price" ? newValue : rowData.quantity || 0;
-
-        rowData.totalAmount = price * quantity;
-
-        // Refresh the grid for immediate effect (optional but recommended)
-        // e.component.refresh();
+        e.editorOptions.value = e.value;
+        e.editorOptions.dataSource =
+          currentStockByProductRef.current[productId];
+        e.editorOptions.valueExpr = "id";
       }
     }
   };
 
-  useEffect(() => {
-    console.log("formData:", formData);
-  }, [formData]);
+  const onEditorPrepared = (e: DataGridTypes.EditorPreparedEvent) => {
+    console.log("onEditor prepared e.dataField:", e.dataField, e.value);
+  };
+
+  const setWarehouseByProduct = (productId: number) => {
+    getCurrentStockByMaterials(productId)
+      .then((currentStockByProduct) => {
+        if (currentStockByProduct?.data?.items?.length === 0) {
+          currentStockByProductRef.current[productId] = warehouseList;
+        } else {
+          currentStockByProductRef.current[productId] =
+            currentStockByProduct.data.items.map(
+              (item: WarehouseWithCurrentQuantity) => {
+                const warehouseWithCurrentQuantity = warehouseHash[
+                  item.warehouseId
+                ] as WarehouseWithCurrentQuantity;
+                return {
+                  ...warehouseWithCurrentQuantity,
+                  currentStockQuantity: item.currentStockQuantity,
+                };
+              },
+            );
+        }
+      })
+      .catch((error) => console.error("error:", error));
+  };
+
+  const onCellPrepared = (e: DataGridTypes.CellPreparedEvent) => {
+    if (e.rowType === "data" && e.column.dataField === "productId") {
+      const productId = e.value;
+      if (productId) {
+        /// get entity product information
+        productComponentStore.byKey(e.value).then((response) => {
+          const product = response.data;
+          const infoByUnit = getProductInfoByUnitLabel(product);
+          if (e?.row?.data && infoByUnit) {
+            e.data.unitId = infoByUnit.id;
+            e.data.priceBuy = infoByUnit.priceBuy;
+            e.data.unitChange = infoByUnit.unitChange;
+          }
+        });
+        // get current stock by product
+        if (currentStockByProductRef.current[productId] === undefined) {
+          setWarehouseByProduct(productId);
+        }
+      }
+    }
+
+    if (e.column.dataField === "quantity" || e.column.dataField === "price") {
+      const newValue = e.value;
+      if (e.data) {
+        const price =
+          e.column.dataField === "quantity" ? newValue : e.data.price || 0;
+        const quantity =
+          e.column.dataField === "price" ? newValue : e.data.quantity || 0;
+        e.data.totalAmount = price * quantity;
+      }
+    }
+  };
 
   return (
     <DataGrid
@@ -413,7 +521,7 @@ export default function PurchasePage() {
       <Column dataField="supplierId" caption="Nha cung cap">
         <Lookup
           dataSource={lookupSupplier}
-          displayExpr={"name"}
+          displayExpr={displayExpr(["code", "name"])}
           valueExpr={"id"}
         />
       </Column>
@@ -569,13 +677,7 @@ export default function PurchasePage() {
                 editorOptions={{
                   dataSource: userComponentStore,
                   valueExpr: "id",
-                  displayExpr: (item: { userName: string; name: string }) => {
-                    if (!item) return "";
-                    let str = "";
-                    if (item.userName) str += item.userName;
-                    if (item.name) str += ` - ${item.name}`;
-                    return str;
-                  },
+                  displayExpr: displayExpr(["userName", "name"]),
                 }}
               />
             </GroupItem>
@@ -592,8 +694,9 @@ export default function PurchasePage() {
                 rowAlternationEnabled
                 dataSource={formData?.purchaseDetails ?? []}
                 onEditorPreparing={onEditorPreparing}
+                onEditorPrepared={onEditorPrepared}
+                onCellPrepared={onCellPrepared}
                 onInitNewRow={(e) => {
-                  console.log("tai sao khong chay");
                   const length = editableDataGridRef.current
                     ?.instance()
                     .getDataSource()
@@ -605,18 +708,6 @@ export default function PurchasePage() {
                     id: Date.now(),
                   };
                   e.data = newRow;
-                }}
-                onRowUpdating={(e) => {
-                  if (e.newData.productId) {
-                    const instance = editableDataGridRef.current?.instance();
-                    const source = instance?.getDataSource();
-                    const items = source?.items();
-                    if (items?.[items?.length - 1]?.productId == 0) {
-                      // editableDataGridRef.current?.instance().addRow();
-                      // Tai sao khong chay??
-                      instance?.addRow();
-                    }
-                  }
                 }}
               >
                 <ColumnChooser enabled mode="select">
@@ -634,7 +725,7 @@ export default function PurchasePage() {
                   allowDeleting={true}
                   confirmDelete={false}
                 />
-                <Sorting mode="single" />
+                <Sorting mode="single" key={"order"} />
                 <Scrolling mode="standard" showScrollbar="onHover" />
                 <StateStoring
                   enabled
@@ -653,16 +744,14 @@ export default function PurchasePage() {
                   <Lookup
                     dataSource={productComponentStore}
                     valueExpr={"id"}
-                    displayExpr={(item) =>
-                      `${item.barCode} ${item.code} ${item.name}`
-                    }
+                    displayExpr={displayExpr(["code", "name"])}
                   />
                 </Column>
                 <Column dataField="unitId" caption="Đơn vị tính">
                   <Lookup
                     dataSource={unitComponentStore}
                     valueExpr={"id"}
-                    displayExpr={(item) => `${item.code} ${item.name}`}
+                    displayExpr={displayExpr(["code", "name"])}
                   />
                 </Column>
                 <Column
@@ -739,9 +828,13 @@ export default function PurchasePage() {
                 />
                 <Column dataField="warehouseId" caption="Kho">
                   <Lookup
-                    dataSource={warehouseComponentStore}
+                    dataSource={[]}
                     valueExpr={"id"}
-                    displayExpr={(item) => `${item.code} ${item.name}`}
+                    displayExpr={displayExpr([
+                      "code",
+                      "name",
+                      "currentStockQuantity",
+                    ])}
                   />
                 </Column>
                 <Column

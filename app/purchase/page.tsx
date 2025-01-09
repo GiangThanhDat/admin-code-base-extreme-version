@@ -241,6 +241,15 @@ type Product = {
   unitDefault: string;
 } & Record<string, unknown>;
 
+type UnitByProduct = {
+  id: number;
+  priceBuy: string;
+  priceSale: number;
+  weight: number;
+  name: string;
+  typeProduct: number;
+};
+
 const getProductInfoByUnitLabel = (
   product: Product,
   unitLabel: string = "UNIT",
@@ -328,7 +337,7 @@ export default function PurchasePage() {
   const currentStockByProductRef = useRef<
     Record<number, WarehouseWithCurrentQuantity>
   >({});
-  const unitByProduct = useRef<Record<number, Product>>({});
+  const unitByProduct = useRef<Record<number, UnitByProduct[]>>({});
 
   const [{ isNewRecord, formData, visible }, setPopupState] =
     useState<PopupState>({
@@ -434,7 +443,9 @@ export default function PurchasePage() {
   };
 
   const setUnitsByProduct = (product: Product) => {
-    unitByProduct.current[product.id] = getUnitsByMaterials(product);
+    unitByProduct.current[product.id] = getUnitsByMaterials(
+      product,
+    ) as UnitByProduct[];
   };
 
   const onCellPrepared = (e: DataGridTypes.CellPreparedEvent) => {

@@ -24,4 +24,9 @@ export const navigation = [
     icon: "cart",
     path: "stock-in",
   },
+  {
+    text: "document",
+    icon: "document",
+    path: "document",
+  },
 ];

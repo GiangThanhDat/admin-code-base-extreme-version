@@ -777,6 +777,7 @@ export default function PurchasePage() {
                     order: (length || 1) + 1,
                     id: Date.now(),
                   };
+
                   e.data = newRow;
                 }}
               >
